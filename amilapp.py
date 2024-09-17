@@ -132,8 +132,8 @@ colormap = branca.colormap.LinearColormap(
     index=[color[0] for color in color_scale],
     vmin=merged['efektivitas code'].min(),
     vmax=merged['efektivitas code'].max(),
-    caption='Efektivitas'  # Set the caption for the legend
-).to_step(n=len(color_scale))  # Use the number of categories for steps
+    caption='Efektivitas'  
+).to_step(n=len(color_scale))  
 
 # Add GeoJson to folium map with dynamic color based on 'efektivitas code'
 geojson = folium.GeoJson(
@@ -194,7 +194,7 @@ fig2 = px.pie(data_filtered_efektivitas,
              hole=0.4,
              color='efektivitas', 
              color_discrete_map=color_mapping,
-             category_orders={"efektivitas": effectiveness_order}  # Sort the legend 
+             category_orders={"efektivitas": effectiveness_order}
              ) 
 
 with col2:
@@ -214,7 +214,7 @@ selected_provinces = st.multiselect(
 
 # Filter data based on selected provinces
 if 'Semua Provinsi' in selected_provinces:
-    data_filtered_prov = data  # Jika 'Semua Provinsi' dipilih, gunakan semua data
+    data_filtered_prov = data 
 else:
     data_filtered_prov = data[data['provinsi'].isin(selected_provinces)]
 
