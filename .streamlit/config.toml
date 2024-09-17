@@ -1,2 +1,3 @@
 [server]
 enableStaticServing = true
+locale = "id_ID.UTF-8"
