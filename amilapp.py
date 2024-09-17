@@ -17,7 +17,7 @@ import branca
 
 st.set_page_config(layout="wide")
 
-locale.setlocale(locale.LC_ALL, 'id_ID.UTF-8')  # Assuming you're using an Indonesian locale
+locale.setlocale(locale.LC_ALL, 'id_ID.UTF-8') 
 
 st.header("Beranda Si Amil Zakatkuy", divider="green")
 
