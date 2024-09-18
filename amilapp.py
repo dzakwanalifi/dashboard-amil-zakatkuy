@@ -15,7 +15,7 @@ from pinecone import Pinecone
 from pinecone_plugins.assistant.models.chat import Message
 import branca
 
-st.set_page_config(layout="wide")
+st.set_page_config(layout="wide", page_title="Beranda Si Amil Zakatkuy", page_icon="static/logo.svg")
 
 locale.setlocale(locale.LC_ALL, 'id_ID.UTF-8')
 
@@ -115,7 +115,7 @@ merged = gdf.set_index('Propinsi').join(data_filtered.set_index('provinsi'))
 merged = merged.reset_index()
 
 # Create a folium map centered around Indonesia
-m = folium.Map(location=[-2.5, 118], zoom_start=5)
+m = folium.Map(location=[-2.5, 118], zoom_start=4)
 
 # Define custom color scale for efektivitas (with text labels)
 color_scale = [
@@ -145,7 +145,7 @@ geojson = folium.GeoJson(
         'fillOpacity': 0.7,
     },
     tooltip=GeoJsonTooltip(
-        fields=['Propinsi', 'efektivitas', 'rasio', 'jumlah_pengumpulan', 'jumlah_penyaluran'],  # Use 'efektivitas_label'
+        fields=['Propinsi', 'efektivitas', 'rasio', 'jumlah_pengumpulan', 'jumlah_penyaluran'],
         aliases=['Provinsi', 'Efektivitas', 'Allocation to Collection Ratio (ACR)', 'Jumlah Pengumpulan Zakat', 'Jumlah Penyaluran Zakat'],
         localize=True
     )
@@ -161,7 +161,7 @@ with col1:
     st.markdown(f"### Peta Rasio Allokasi ke Pengumpulan Zakat Tahun {selected_year}")
 
     # Display the map 
-    folium_static(m, width=800)
+    folium_static(m)
 
 
 # buat data yang berisi jumlah count agregasi efektivitas
@@ -196,6 +196,11 @@ fig2 = px.pie(data_filtered_efektivitas,
              color_discrete_map=color_mapping,
              category_orders={"efektivitas": effectiveness_order}
              ) 
+
+fig2.update_layout(
+        xaxis=dict(fixedrange=True),
+        yaxis=dict(fixedrange=True)
+    )
 
 with col2:
     # Display the chart in Streamlit
@@ -241,6 +246,11 @@ fig = px.bar(data_melted,
             labels={'Jumlah': 'Jumlah Zakat (Rupiah)', 'tahun': 'Tahun'},
             title='Penerimaan dan Penyaluran Zakat per Tahun')    
 
+fig.update_layout(
+        xaxis=dict(fixedrange=True),
+        yaxis=dict(fixedrange=True)
+    )
+
 col1, col2 = st.columns(2)
 
 with col1:
@@ -250,6 +260,11 @@ with col1:
 fig2 = px.line(data_penerimaan_provinsi, x='tahun', y='jumlah_pengumpulan', color='provinsi',
                 labels={'jumlah_pengumpulan': 'Jumlah Penerimaan Zakat (Rupiah)', 'tahun': 'Tahun'},
                 title='Penerimaan Zakat per Provinsi')
+
+fig2.update_layout(
+        xaxis=dict(fixedrange=True),
+        yaxis=dict(fixedrange=True)
+    )
 
 with col2:
     st.plotly_chart(fig2, use_container_width=True)
