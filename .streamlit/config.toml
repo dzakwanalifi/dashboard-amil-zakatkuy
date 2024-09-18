@@ -2,7 +2,7 @@
 enableStaticServing = true
 
 [client]
-toolbarMode = "viewer"
+toolbarMode = "minimal"
 
 [theme]
 base = "dark"
