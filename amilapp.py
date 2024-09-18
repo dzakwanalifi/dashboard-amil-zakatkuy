@@ -15,14 +15,6 @@ from pinecone import Pinecone
 from pinecone_plugins.assistant.models.chat import Message
 import branca
 
-# Add custom CSS to hide the GitHub icon
-hide_github_icon = """
-#GithubIcon {
-  visibility: hidden;
-}
-"""
-st.markdown(hide_github_icon, unsafe_allow_html=True)
-
 st.set_page_config(layout="wide", page_title="Beranda Si Amil Zakatkuy", page_icon="static/logo.svg")
 
 locale.setlocale(locale.LC_ALL, 'id_ID.UTF-8')
