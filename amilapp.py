@@ -62,7 +62,6 @@ selected_year = st.select_slider(
     options=sorted(data['tahun'].unique())
 )
 
-
 # Filter data berdasarkan tahun yang dipilih
 data_filtered = data[data['tahun'] == selected_year]
 
@@ -158,7 +157,7 @@ with col1:
     colormap.add_to(m)
 
     # title for map using st.markdown
-    st.markdown(f"### Peta Rasio Allokasi ke Pengumpulan Zakat Tahun {selected_year}")
+    st.markdown(f"### Peta Rasio Alokasi ke Pengumpulan Zakat Tahun {selected_year}")
 
     # Display the map 
     folium_static(m)
