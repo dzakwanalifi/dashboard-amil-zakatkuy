@@ -5,4 +5,4 @@ enableStaticServing = true
 toolbarMode = "minimal"
 
 [theme]
-base = "dark"
+base = "light"
