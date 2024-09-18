@@ -15,7 +15,7 @@ from pinecone import Pinecone
 from pinecone_plugins.assistant.models.chat import Message
 import branca
 
-st.set_page_config(layout="wide", page_title="Beranda Si Amil Zakatkuy", page_icon="static/logo.svg")
+st.set_page_config(layout="wide", page_title="Beranda Si Amil Zakatkuy", page_icon="static/logo.svg", initial_sidebar_state="collapsed")
 
 locale.setlocale(locale.LC_ALL, 'id_ID.UTF-8')
 
@@ -268,61 +268,145 @@ fig2.update_layout(
 with col2:
     st.plotly_chart(fig2, use_container_width=True)
 
+import google.generativeai as genai
 
-# Pastikan Anda telah menambahkan API Key Pinecone ke secrets.toml
-if "api_key" in st.secrets:
-    api_key = st.secrets["api_key"]
-else:
-    st.error("Missing API key. Please add your API key to the secrets.toml file to continue.")
+# Sidebar select box for model selection
+model_option = st.sidebar.selectbox(
+    "Pilih Model AI:",
+    ("Pinecone", "Gemini")
+)
 
-# Define assistant name for Pinecone API
-assistant_name = "zaki"
-
-# Initialize Pinecone with the API key
-pc = Pinecone(api_key=api_key)
-assistant = pc.assistant.Assistant(assistant_name=assistant_name)
-
-# Inisialisasi chat messages dalam session state
+# Initialize session state for messages
 if "messages" not in st.session_state:
     st.session_state["messages"] = []
 
 messages = st.session_state["messages"]
 
-# Chat pembuka - hanya ditampilkan jika percakapan baru dimulai
+# Common opening message
 if len(messages) == 0:
-    opening_message = "Assalamu'alaikum! Ana adalah Zaki, siap membantu antum dengan pertanyaan terkait laporan zakat BAZNAS. Silakan tanyakan apa yang ingin antum ketahui tentang laporan zakat BAZNAS, insyaAllah ana siap membantu!"
-    messages.append({"role": "assistant", "content": opening_message})
+    opening_message = ""
+    if model_option == "Pinecone":
+        opening_message = "Assalamu'alaikum! Ana adalah Zaki, siap membantu antum dengan pertanyaan terkait laporan zakat BAZNAS. Silakan tanyakan apa yang ingin antum ketahui tentang laporan zakat BAZNAS, insyaAllah ana siap membantu!"
+        messages.append({"role": "assistant", "content": opening_message})
+    elif model_option == "Gemini":
+        opening_message = "Assalamu'alaikum! Ana adalah ZakatKuy, siap membantu antum dengan pertanyaan terkait zakat. Silakan tanyakan apa yang ingin antum ketahui tentang zakat, insyaAllah ana siap membantu!"
+        messages.append({"role": "assistant", "content": opening_message})
 
-# Tampilkan chat messages sebelumnya
+# Display previous chat messages
 for message in messages:
-    role, content = message.values()
+    role = message.get("role", "")
+    content = message.get("content", "") or "".join(message.get("parts", []))
     avatar = "static/user_icon.png" if role == "user" else "static/ai_icon.png"
     with st.chat_message(role, avatar=avatar):
         st.markdown(content)
 
-# Input untuk pesan pengguna
+# User input
 chat_message = st.chat_input("Masukkan pesan Anda...")
 
 if chat_message:
     st.chat_message("user", avatar="static/user_icon.png").markdown(chat_message)
-    
-    # Tambahkan pesan pengguna ke messages
     messages.append({"role": "user", "content": chat_message})
 
-    # Kirim pesan ke Pinecone Assistant API menggunakan SDK
-    chat_context = [Message(content=chat_message)]
-    response = assistant.chat_completions(messages=chat_context)
+    if model_option == "Pinecone":
+        # Pinecone API Key
+        if "api_key" in st.secrets:
+            api_key = st.secrets["api_key"]
+        else:
+            st.error("Missing API key. Please add your API key to the secrets.toml file to continue.")
 
-    if response:
-        assistant_reply = response.choices[0].message.content
-        
-        # Tambahkan respons AI ke messages
-        st.chat_message("assistant", avatar="static/ai_icon.png").markdown(assistant_reply)
-        messages.append({"role": "assistant", "content": assistant_reply})
-    else:
-        st.error("Terjadi kesalahan saat menghubungi Assistant API.")
+        # Initialize Pinecone
+        assistant_name = "zaki"
+        pc = Pinecone(api_key=api_key)
+        assistant = pc.assistant.Assistant(assistant_name=assistant_name)
 
-# Tombol untuk mereset percakapan, hanya muncul jika sudah ada pesan pertama
+        # Send message to Pinecone Assistant API
+        chat_context = [Message(content=chat_message)]
+        response = assistant.chat_completions(messages=chat_context)
+
+        if response:
+            assistant_reply = response.choices[0].message.content
+            st.chat_message("assistant", avatar="static/ai_icon.png").markdown(assistant_reply)
+            messages.append({"role": "assistant", "content": assistant_reply})
+        else:
+            st.error("Terjadi kesalahan saat menghubungi Assistant API.")
+
+    elif model_option == "Gemini":
+        # Fetch gold price
+        def fetch_gold_price():
+            url = "https://logam-mulia-api.vercel.app/prices/hargaemas-org"
+            try:
+                response = requests.get(url)
+                data = response.json()
+                return data["data"][0]["sell"]
+            except Exception as e:
+                st.error(f"Gagal mengambil harga emas: {e}")
+                return None
+
+        gold_price = fetch_gold_price()
+
+        if gold_price is not None:
+            # Configure API key for Gemini
+            if "google_api_key" in st.secrets:
+                genai.configure(api_key=st.secrets["google_api_key"])
+            else:
+                st.error("Missing Google API key. Please add your API key to the secrets.toml file to continue.")
+
+            # Get response from Gemini
+            def get_response(messages, gold_price):
+                try:
+                    generation_config = {
+                        "temperature": 1,
+                        "top_p": 0.95,
+                        "top_k": 64,
+                        "max_output_tokens": 8192,
+                        "response_mime_type": "text/plain",
+                    }
+
+                    system_instruction = st.secrets["system_instruction"].format(gold_price=gold_price)
+
+                    model = genai.GenerativeModel(
+                        model_name="gemini-1.5-flash",
+                        system_instruction=system_instruction,
+                        tools='code_execution',
+                    )
+
+                    res = model.generate_content(
+                        [msg["content"] for msg in messages if msg["role"] == "user"],
+                        stream=True,
+                        generation_config=generation_config
+                    )
+                    return res
+                except Exception as e:
+                    st.error(f"Error getting response from the model: {e}")
+                    return []
+
+            def extract_result_from_response(response_text):
+                # Remove code blocks from response
+                while '```' in response_text:
+                    start_code_block = response_text.find('```')
+                    end_code_block = response_text.find('```', start_code_block + 3)
+                    if end_code_block == -1:
+                        break
+                    response_text = response_text[:start_code_block] + response_text[end_code_block + 3:]
+                return response_text.strip()
+
+            # Get the response from Gemini
+            res = get_response(messages, gold_price)
+            res_text = ""
+            for chunk in res:
+                if hasattr(chunk, "text"):
+                    res_text += chunk.text
+
+            # Process the response
+            final_result = extract_result_from_response(res_text)
+
+            # Display the assistant's reply
+            st.chat_message("assistant", avatar="static/ai_icon.png").markdown(final_result)
+            messages.append({"role": "assistant", "content": final_result})
+        else:
+            st.error("Gagal mengambil harga emas. Mohon periksa koneksi Anda.")
+
+# Reset conversation button
 if len(st.session_state["messages"]) > 1:
     if st.button("Reset Percakapan"):
         st.session_state.clear()
